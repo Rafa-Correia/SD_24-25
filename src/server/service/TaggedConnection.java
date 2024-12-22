@@ -10,12 +10,15 @@ import java.util.Set;
 
 public class TaggedConnection {
     private final int tag;
-    private final int type; //
+    private final int type; //type of data
+    private final String id; //message id, so Register, Login, Put, Get, etc.
     private final Object data;
 
-    public TaggedConnection (int tag, Object data) {
+    public TaggedConnection (int tag, String id, Object data) {
         this.tag = tag;
+        this.id = id;
         this.data = data;
+        
         this.type = inferType(data);
 
     }
@@ -62,6 +65,7 @@ public class TaggedConnection {
 
     public void serialize(DataOutputStream os) throws IOException {
         os.writeInt(tag);
+        os.writeUTF(id);
         os.writeInt(type);
 
         switch(type) {
@@ -133,6 +137,7 @@ public class TaggedConnection {
 
     public static TaggedConnection deserialize(DataInputStream is) throws IOException {
         int tag = is.readInt();
+        String id = is.readUTF();
         int type = is.readInt();
         Object data;
         switch(type) {
@@ -195,12 +200,18 @@ public class TaggedConnection {
 
         }
 
-        return new TaggedConnection(tag, data);
+        return new TaggedConnection(tag, id, data);
     }
 
+    public int get_tag() {
+        return tag;
+    }
 
+    public String get_id() {
+        return id;
+    }
 
-    public Object get_object() {
+    public Object get_data() {
         return data;
     }
 }

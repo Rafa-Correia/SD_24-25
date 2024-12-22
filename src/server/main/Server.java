@@ -5,22 +5,22 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Map;
+import java.util.Set;
 
-import server.service.AuthService;
-import server.service.Manager;
-
+import server.service.*;
+import server.service.TaggedConnection.KeyDataPair;
+import server.service.TaggedConnection.UidPassPair;
 public class Server {
     private class ServerWorker implements Runnable {
         Manager m;
         AuthService authService;
-        Socket client_socket;
         DataInputStream iStream;
         DataOutputStream oStream;
 
         public ServerWorker(Socket cs, Manager m, AuthService authService) throws IOException {
             this.m = m;
             this.authService = authService;
-            client_socket = cs;
             iStream = new DataInputStream(cs.getInputStream());
             oStream = new DataOutputStream(cs.getOutputStream());
         }
@@ -31,6 +31,66 @@ public class Server {
 
             //authenticate first, then do the rest (handle requests and allat)
             //flag to check if authenticated?
+            boolean authenticated = false;
+            while (true) {
+                try {
+                    TaggedConnection t = TaggedConnection.deserialize(iStream);
+                    int tag = t.get_tag();
+                    Object obj = t.get_data();
+                    String id = t.get_id();
+                    Worker w = null;
+                    if(!authenticated) {
+                        if("Login".equals(id)) {
+                            UidPassPair upp = (UidPassPair) obj;
+                            authenticated = authService.authenticate(upp.uid, upp.password);
+                            if(authenticated) {
+                                w = m.join();
+                            }
+                            TaggedConnection response = new TaggedConnection(tag, "Data", authenticated);
+                            response.serialize(oStream);
+                        } if("Register".equals(id)) {
+                            UidPassPair upp = (UidPassPair) obj;
+                            authService.register_client(upp.uid, upp.password);
+                            TaggedConnection response = new TaggedConnection(tag, "Echo", "ok");
+                            response.serialize(oStream);
+                        } else {
+                            continue;
+                        }
+                    }
+                    if("Put".equals(id)) {
+                        KeyDataPair kdp = (KeyDataPair) obj;
+                        w.put(kdp.key, kdp.data);
+                        TaggedConnection response = new TaggedConnection(tag, "Echo", "ok");
+                        response.serialize(oStream);
+                    } else if("Get".equals(id)) {
+                        String key = (String) obj;
+                        byte[] bArray = w.get(key);
+                        TaggedConnection response = new TaggedConnection(tag, "Data", bArray); //not checking for null return 
+                        response.serialize(oStream);
+                    } else if("MultiPut".equals(id)) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, byte[]> m = (Map<String, byte[]>) obj;
+                        w.multiPut(m);
+                        TaggedConnection response = new TaggedConnection(tag, "Echo", "ok");
+                        response.serialize(oStream);
+                    } else if("MultiGet".equals(id)) {
+                        @SuppressWarnings("unchecked")
+                        Set<String> s = (Set<String>) obj;
+                        Map<String, byte[]> m = w.mutliGet(s);
+                        TaggedConnection response = new TaggedConnection(tag, "Data", m); //not checking for null return 
+                        response.serialize(oStream);
+                    } else if("Disconnect".equals(id)) {
+                        w.leave();
+                        TaggedConnection response = new TaggedConnection(tag, "echo", "ok"); //not checking for null return 
+                        response.serialize(oStream);
+                    }
+                } catch (Exception e) {
+                    System.out.println(e.toString());
+                }
+                
+            }
+            
+
         }
     }
 
