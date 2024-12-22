@@ -1,0 +1,19 @@
+Client sends server x types of messages:
+    - Authenticate, followed by uid and password (String, String)
+    - put, followed by key and data (String, byte[])
+    - get, followed by key (String)
+    - multiPut, followed by a map of string and data (Map<String, byte[]>)
+    - multiGet, followed by a set of keys (Set<String>)
+    - Disconnect (none)
+
+Server responds to client using the following messages:
+    - To auth, server responds with true of false (if authenticaded then true, else false) (1 or 0?)
+    - To put server responds with "ok"
+    - To get server responds with data (byte[])
+    - To multiput server responds with "ok"
+    - To multiget server responds with map of key and data (Map<String, byte[]>)
+    - To disconnect server responds with "ok"
+
+
+data object should be same in client and server
+    
