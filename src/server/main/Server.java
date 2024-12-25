@@ -81,7 +81,7 @@ public class Server {
                         response.serialize(oStream);
                     } else if("Disconnect".equals(id)) {
                         w.leave();
-                        TaggedConnection response = new TaggedConnection(tag, "echo", "ok"); //not checking for null return 
+                        TaggedConnection response = new TaggedConnection(tag, "Echo", "ok"); //not checking for null return 
                         response.serialize(oStream);
                     }
                 } catch (Exception e) {
