@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 public class TaggedConnection {
     private final int tag;
@@ -24,6 +25,7 @@ public class TaggedConnection {
     }
 
     private int inferType(Object data) { //if need more just add more returns here
+        if (data == null) return 0;
         if(data instanceof Map) {
             return 1;
         } else if(data instanceof Set) {
@@ -64,15 +66,18 @@ public class TaggedConnection {
 
 
     public void serialize(DataOutputStream os) throws IOException {
+        System.out.println("(se) tag: " + tag + " id: " + id + " type: " + type);
         os.writeInt(tag);
         os.writeUTF(id);
         os.writeInt(type);
 
+
+
         switch(type) {
-            case 1:
+            case 1 -> {
                 System.out.println("Serializing map!");
                 @SuppressWarnings("unchecked")
-                Map<String, byte[]> m = (Map<String, byte[]>) data;
+                        Map<String, byte[]> m = (Map<String, byte[]>) data;
                 os.writeInt(m.size());
                 for(Map.Entry<String, byte[]> e : m.entrySet()) {
                     os.writeUTF(e.getKey());
@@ -81,27 +86,30 @@ public class TaggedConnection {
                     os.write(v);
                 }
                 os.flush();
-                break; 
+                break;
+            } 
             
-            case 2:
-            System.out.println("Serializing set!");
+            case 2 -> {
+                System.out.println("Serializing set!");
                 @SuppressWarnings("unchecked")
-                Set<String> s = (Set<String>) data;
+                        Set<String> s = (Set<String>) data;
                 os.writeInt(s.size());
                 for(String key : s) {
                     os.writeUTF(key);
                 }
                 os.flush();
                 break;
+            }
 
-            case 3:
+            case 3 -> {
                 //string
                 System.out.println("Serializing string!");
                 os.writeUTF((String) data);
                 os.flush();
                 break;
+            }
 
-            case 4:
+            case 4 -> {
                 System.out.println("Serializing barray!");
                 //byte[]
                 byte[] bArray = (byte[]) data;
@@ -109,8 +117,9 @@ public class TaggedConnection {
                 os.write(bArray);
                 os.flush();
                 break;
+            }
 
-            case 5:
+            case 5 -> {
                 System.out.println("Serializing uidpasspair!");
                 //UidPassPair
                 UidPassPair p = (UidPassPair) data;
@@ -118,8 +127,9 @@ public class TaggedConnection {
                 os.writeUTF(p.password);
                 os.flush();
                 break;
+            }
             
-            case 6:
+            case 6 -> {
                 System.out.println("Serializing keydatapair!");
                 //KeyDataPair
                 KeyDataPair k = (KeyDataPair) data;
@@ -128,27 +138,54 @@ public class TaggedConnection {
                 os.write(k.data);
                 os.flush();
                 break;
+            }
 
-            case 7:
-                System.out.println("Serializing boolean!");
+            case 7 -> {
+                System.out.println("Serializing boolean...");
                 //boolean
                 Boolean b = (Boolean) data;
+                System.out.println("Bool has value: " + b) ;
                 os.writeBoolean(b);
                 os.flush();
+                System.out.println("Done!");
                 break;
+            }
 
-            default:
+            default -> {
                 break;
+            }
         }
+
+        System.out.println("Finished serialization.");
     }
 
     public static TaggedConnection deserialize(DataInputStream is) throws IOException {
+
+        //THIS LOOP IS ABSOLUTELLY NECESSARY
+        //if this loop is not here the code wont work for some reason (i do not know why)
+        //what the frick
+        //i hate this stuff sometimes
+        //maybe god knows why this works, cause i dont
+
+        
+        while(is.available() <= 0) {
+            try {
+                System.out.print("");
+                TimeUnit.MILLISECONDS.sleep(100);
+            } catch (InterruptedException e) {
+                System.out.println(e.toString());
+            }
+        }   
+        
+        //DO NOT REMOVE LOOP
+
         int tag = is.readInt();
         String id = is.readUTF();
         int type = is.readInt();
+        System.out.println("(de) tag: " + tag + " id: " + id + " type: " + type);
         Object data;
         switch(type) {
-            case 1:
+            case 1 -> {
                 System.out.println("Deserializing map!");
                 //map
                 Map<String, byte[]> m = new HashMap<>();
@@ -162,8 +199,9 @@ public class TaggedConnection {
                 }
                 data = m;
                 break;
+            }
 
-            case 2:
+            case 2 -> {
                 System.out.println("Deserializing set!");
                 //set
                 Set<String> s = new HashSet<>();
@@ -173,14 +211,16 @@ public class TaggedConnection {
                 }
                 data = s;
                 break;
+            }
 
-            case 3:
+            case 3 -> {
                 System.out.println("Deserializing string!");
                 //string
                 data = is.readUTF();
                 break;
+            }
             
-            case 4:
+            case 4 -> {
                 System.out.println("Deserializing barray!");
                 int arraysize = is.readInt();
                 System.out.println("Length is " + arraysize);
@@ -188,16 +228,18 @@ public class TaggedConnection {
                 is.read(bytearray, 0, arraysize);
                 data = bytearray;
                 break;
+            }
 
-            case 5:
+            case 5 -> {
                 System.out.println("Deserializing uidpasspair!");
                 String uid = is.readUTF();
                 String password = is.readUTF();
 
                 data = new UidPassPair(uid, password);
                 break;
+            }
 
-            case 6:
+            case 6 -> {
                 System.out.println("Deserializing keydatapair!");
                 String key = is.readUTF();
                 int bSize = is.readInt();
@@ -205,14 +247,17 @@ public class TaggedConnection {
                 is.readFully(bArray);
                 data = new KeyDataPair(key, bArray);
                 break;
+            }
 
-            case 7:
+            case 7 -> {
                 System.out.println("Deserializing boolean!");
                 data = is.readBoolean();
+                System.out.println("Done!");
+
                 break;
+            }
             
-            default:
-                throw new IllegalArgumentException("Unsupported type.");
+            default -> throw new IllegalArgumentException("Unsupported type.");
 
         }
 

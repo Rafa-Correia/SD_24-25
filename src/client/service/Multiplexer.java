@@ -32,6 +32,7 @@ public class Multiplexer {
     }
 
     public void enqueue (TaggedConnection tc) {
+        //System.out.println("Enqueueing! Tag is " + tc.get_tag());
         l.lock();
         try {
             Condition c = l.newCondition();
@@ -40,6 +41,7 @@ public class Multiplexer {
 
             sendQueue.add(tc);
             sendQueue_empty.signalAll();
+            //System.out.println("Signalled that queue is not empty!");
         } finally {
             l.unlock();
         }
@@ -57,6 +59,7 @@ public class Multiplexer {
         try {
             MEntry e = receiveQueue.get(tag);
             while(!e.is_ready_flag) {
+                //System.out.println("Waiting at dequeue (tag: " + tag + ")");
                 e.c.await();
             }
             receiveQueue.remove(tag);
@@ -89,10 +92,13 @@ public class Multiplexer {
         try {
             while (true) { 
                 while(sendQueue.isEmpty()) {
+                    //System.out.println("Queue is empty, awaiting...");
                     sendQueue_empty.await(); //releases lock when queue is empty!
                 }
                 TaggedConnection send = sendQueue.remove(0);
+                //System.out.println("Sending " + send.get_id() + " with tag " + send.get_tag());
                 send.serialize(os);
+                //System.out.println("(runningSend) Done!");
             }
         } finally {
             l.unlock();
@@ -103,6 +109,7 @@ public class Multiplexer {
         while(true) {
             TaggedConnection tc = TaggedConnection.deserialize(is);
             int tag = tc.get_tag();
+            System.out.println("(runningReceive) Got a response with tag " + tag + " of type " + tc.get_id());
             l.lock();
             try {
                 MEntry e = receiveQueue.get(tag);

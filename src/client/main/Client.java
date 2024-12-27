@@ -1,28 +1,23 @@
 package client.main;
 
-import client.service.CommI;
-import client.service.ServerComm;
+import client.service.Menu;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 public class Client {
-    private CommI coms;
-    private DataInputStream is;
-    private DataOutputStream os;
-    private int tag_counter = 0;
+    private final Menu menu;
 
-    private byte[] msg = new byte[10];
+    private final byte[] msg = new byte[10];
     
 
 
     public Client (Socket s) throws IOException {
-        this.coms = new ServerComm();
-        this.is = new DataInputStream(s.getInputStream());
-        this.os = new DataOutputStream(s.getOutputStream());
+        DataInputStream is = new DataInputStream(s.getInputStream());
+        DataOutputStream os = new DataOutputStream(s.getOutputStream());
+        
+        this.menu = new Menu(is, os);
 
         for (int i = 0; i < msg.length; i++) {
             msg[i] = (byte) i;
@@ -30,25 +25,13 @@ public class Client {
     }
     
 
-    public void run() throws Exception {
-        coms.register(tag_counter, "admin", "admin", is, os);
-        tag_counter++;
-        coms.authenticate(tag_counter, "admin", "admin", is, os);
-        tag_counter++;
-
-
-        while (true) { 
-            System.out.println("On tag " + tag_counter + " with key " + tag_counter + " putting " + Arrays.toString(msg));
-            coms.put(tag_counter, String.valueOf(tag_counter), msg, is, os);
-            tag_counter++;
-            System.out.println("On tag " + tag_counter + " with key " + (tag_counter-1) + " getting data.");
-            byte[] put_data = coms.get(tag_counter, String.valueOf(tag_counter-1), is, os);
-            tag_counter++;
-            System.out.println(Arrays.toString(put_data));
-            TimeUnit.SECONDS.sleep(5);
+    public void run() {
+        try {
+            menu.main_menu();
+        } catch (Exception e) {
+            System.out.println(e.toString());
         }
     }
-    
 
     public static void main(String[] args) {
         try {

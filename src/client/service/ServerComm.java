@@ -76,4 +76,14 @@ public class ServerComm implements CommI {
         TaggedConnection response = multiplexer.dequeue(tag);
         return !"Error".equals(response.get_id());
     }
+
+    public void runningSend() throws Exception {
+        multiplexer.runningSend();
+    }
+
+    public void runningReceive() throws Exception {
+        multiplexer.runningReceive();
+    }
+
+
 }
