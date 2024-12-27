@@ -56,4 +56,11 @@ public class ServerComm implements CommI {
         Map<String, byte[]> ret = (Map<String, byte[]>) response.get_data();
         return ret;
     }
+    
+    @Override
+    public void disconnect(int tag, DataInputStream is, DataOutputStream os) throws IOException {
+        TaggedConnection send = new TaggedConnection(tag, "Disconnect", "ok");
+        send.serialize(os);
+        TaggedConnection.deserialize(is); //clear input stream
+    }
 }

@@ -1,9 +1,8 @@
 package server.service;
 
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-
-import java.util.concurrent.locks.Condition;
 
 public class Manager {
     private int MAX_COUNT;
@@ -25,6 +24,7 @@ public class Manager {
     
     
     public Worker join () throws InterruptedException {
+        System.out.println("Waiting on join...");
         l.lock();
         try {
             while(client_count >= MAX_COUNT) {
@@ -37,6 +37,7 @@ public class Manager {
             
         } finally {
             l.unlock();
+            System.out.println("Done!");
         }
     } 
 

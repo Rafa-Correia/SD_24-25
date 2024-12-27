@@ -70,6 +70,7 @@ public class TaggedConnection {
 
         switch(type) {
             case 1:
+                System.out.println("Serializing map!");
                 @SuppressWarnings("unchecked")
                 Map<String, byte[]> m = (Map<String, byte[]>) data;
                 os.writeInt(m.size());
@@ -83,6 +84,7 @@ public class TaggedConnection {
                 break; 
             
             case 2:
+            System.out.println("Serializing set!");
                 @SuppressWarnings("unchecked")
                 Set<String> s = (Set<String>) data;
                 os.writeInt(s.size());
@@ -94,11 +96,13 @@ public class TaggedConnection {
 
             case 3:
                 //string
+                System.out.println("Serializing string!");
                 os.writeUTF((String) data);
                 os.flush();
                 break;
 
             case 4:
+                System.out.println("Serializing barray!");
                 //byte[]
                 byte[] bArray = (byte[]) data;
                 os.writeInt(bArray.length);
@@ -107,6 +111,7 @@ public class TaggedConnection {
                 break;
 
             case 5:
+                System.out.println("Serializing uidpasspair!");
                 //UidPassPair
                 UidPassPair p = (UidPassPair) data;
                 os.writeUTF(p.uid);
@@ -115,6 +120,7 @@ public class TaggedConnection {
                 break;
             
             case 6:
+                System.out.println("Serializing keydatapair!");
                 //KeyDataPair
                 KeyDataPair k = (KeyDataPair) data;
                 os.writeUTF(k.key);
@@ -124,6 +130,7 @@ public class TaggedConnection {
                 break;
 
             case 7:
+                System.out.println("Serializing boolean!");
                 //boolean
                 Boolean b = (Boolean) data;
                 os.writeBoolean(b);
@@ -142,6 +149,7 @@ public class TaggedConnection {
         Object data;
         switch(type) {
             case 1:
+                System.out.println("Deserializing map!");
                 //map
                 Map<String, byte[]> m = new HashMap<>();
                 int mapsize = is.readInt();
@@ -156,6 +164,7 @@ public class TaggedConnection {
                 break;
 
             case 2:
+                System.out.println("Deserializing set!");
                 //set
                 Set<String> s = new HashSet<>();
                 int setsize = is.readInt();
@@ -166,18 +175,22 @@ public class TaggedConnection {
                 break;
 
             case 3:
+                System.out.println("Deserializing string!");
                 //string
                 data = is.readUTF();
                 break;
             
             case 4:
+                System.out.println("Deserializing barray!");
                 int arraysize = is.readInt();
+                System.out.println("Length is " + arraysize);
                 byte[] bytearray = new byte[arraysize];
-                is.readFully(bytearray);
+                is.read(bytearray, 0, arraysize);
                 data = bytearray;
                 break;
 
             case 5:
+                System.out.println("Deserializing uidpasspair!");
                 String uid = is.readUTF();
                 String password = is.readUTF();
 
@@ -185,13 +198,16 @@ public class TaggedConnection {
                 break;
 
             case 6:
+                System.out.println("Deserializing keydatapair!");
                 String key = is.readUTF();
                 int bSize = is.readInt();
                 byte[] bArray = new byte[bSize];
+                is.readFully(bArray);
                 data = new KeyDataPair(key, bArray);
                 break;
 
             case 7:
+                System.out.println("Deserializing boolean!");
                 data = is.readBoolean();
                 break;
             

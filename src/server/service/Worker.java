@@ -1,5 +1,6 @@
 package server.service;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,11 +15,14 @@ public class Worker {
     }
 
     public void put(String key, byte[] data) {
+        System.out.println("Trying to put on key " + key + " data " + Arrays.toString(data));
         dService.put(key, data);
+        System.out.println("Done!");
     }
 
 
     public byte[] get(String key) {
+        System.out.println("Trying to get from key " + key);
         return dService.get(key);
     }
 

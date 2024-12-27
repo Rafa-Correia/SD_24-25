@@ -7,7 +7,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
-
 import server.service.*;
 import server.service.TaggedConnection.KeyDataPair;
 import server.service.TaggedConnection.UidPassPair;
@@ -32,29 +31,35 @@ public class Server {
             //authenticate first, then do the rest (handle requests and allat)
             //flag to check if authenticated?
             boolean authenticated = false;
+            Worker w = null;
             while (true) {
                 try {
                     TaggedConnection t = TaggedConnection.deserialize(iStream);
                     int tag = t.get_tag();
                     Object obj = t.get_data();
                     String id = t.get_id();
-                    Worker w = null;
+
                     if(!authenticated) {
                         if("Login".equals(id)) {
                             UidPassPair upp = (UidPassPair) obj;
+                            System.out.println("Got Login message with uid " + upp.uid + " and pass " + upp.password);
                             authenticated = authService.authenticate(upp.uid, upp.password);
+                            System.out.println("Auth status: " + authenticated);
                             if(authenticated) {
                                 w = m.join();
                             }
                             TaggedConnection response = new TaggedConnection(tag, "Data", authenticated);
                             response.serialize(oStream);
-                        } if("Register".equals(id)) {
+                        } else if("Register".equals(id)) {
                             UidPassPair upp = (UidPassPair) obj;
+                            System.out.println("Got Register message with uid " + upp.uid + " and pass " + upp.password);
                             authService.register_client(upp.uid, upp.password);
                             TaggedConnection response = new TaggedConnection(tag, "Echo", "ok");
                             response.serialize(oStream);
                         } else {
-                            continue;
+                            System.out.println("Unauthorized operation (" + id + ")");
+                            TaggedConnection response = new TaggedConnection(tag, "Error", "no auth");
+                            response.serialize(oStream);
                         }
                     }
                     if("Put".equals(id)) {

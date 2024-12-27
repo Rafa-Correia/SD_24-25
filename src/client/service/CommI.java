@@ -13,4 +13,5 @@ public interface CommI {
     public byte[] get(int tag, String key, DataInputStream is, DataOutputStream os) throws IOException;
     public void multiPut(int tag, Map<String, byte[]> pairs, DataInputStream is, DataOutputStream os) throws IOException;
     public Map<String, byte[]> multiGet(int tag, Set<String> keys, DataInputStream is, DataOutputStream os) throws IOException;
+    public void disconnect(int tag, DataInputStream is, DataOutputStream os) throws IOException;
 }
