@@ -101,7 +101,6 @@ public class Server {
                             w.leave();
                             TaggedConnection response = new TaggedConnection(tag, "Data", true); //not checking for null return 
                             response.serialize(oStream);
-                            s.close();
                             }
                         default -> {
                         }

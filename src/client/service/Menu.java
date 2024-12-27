@@ -2,11 +2,13 @@ package client.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Scanner;
 
 public class Menu {
-    private ServerComm sCom;
-    private Scanner sc = new Scanner(System.in);
+    private final ServerComm sCom;
+    private final Scanner sc = new Scanner(System.in);
 
     private int tag_counter = 0;
 
@@ -87,6 +89,8 @@ public class Menu {
                 switch(selection) {
                     case 1 -> register_menu();
                     case 2 -> login_menu();
+                    case 3 -> upload_single_menu();
+                    case 4 -> download_single_menu();
                     case 0 -> has_quit = disconnect();
                     default -> {
                     }
@@ -146,13 +150,61 @@ public class Menu {
         }
     }
 
+    private void upload_single_menu() {
+        try {
+            System.out.print("Please enter the file path: ");
+            String filePath = sc.next();
+            System.out.print("What key would you like to associate with the file?\nKey: ");
+            String key = sc.next();
+
+            Path path = Path.of(filePath);
+            byte[] data = Files.readAllBytes(path);
+
+            boolean status = sCom.put(tag_counter, key, data);
+            tag_counter++;
+
+            clearConsole();
+
+            if(status) {
+                System.out.println("Success!");
+
+            } else {
+                System.out.println("Could not upload file " + filePath + " with key " + key + ".");
+            }
+        } catch (Exception e) {
+            System.out.println("File does not exist!");
+        }
+    }
+
+    private void download_single_menu() {
+        try {
+            System.out.print("What's the key of the file?\nKey: ");
+            String key = sc.next();
+            Path p = Path.of(key);
+
+            byte[] file_dl = sCom.get(tag_counter, key);
+            tag_counter++;
+
+            clearConsole();
+
+            if(file_dl == null) System.out.println("Failed to download.");
+            else {
+                Files.write(p, file_dl);
+                System.out.println("Success!");
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to download (" + e.toString() + ").");
+        }
+    }
+
     private boolean disconnect() {
         try {
             boolean success = sCom.disconnect(tag_counter);
             tag_counter++;
+            System.out.println("Has disconected: " + success);
             return success;
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println(e.toString());
         }
         return false;
     }

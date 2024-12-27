@@ -38,7 +38,7 @@ public class Client {
             Socket s = new Socket("localhost", 65432);
             Client c = new Client(s);
             c.run();
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println(e.toString());
         }
     }
