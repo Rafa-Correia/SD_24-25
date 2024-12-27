@@ -2,6 +2,7 @@ package client.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,15 +13,15 @@ import java.util.concurrent.locks.ReentrantLock;
 import server.service.TaggedConnection;
 
 public class Multiplexer {
-    private DataInputStream is;
-    private DataOutputStream os;
+    private final DataInputStream is;
+    private final DataOutputStream os;
 
-    private List<TaggedConnection> sendQueue;
-    private Map<Integer, MEntry> receiveQueue;
+    private final List<TaggedConnection> sendQueue;
+    private final Map<Integer, MEntry> receiveQueue;
 
-    private Lock l = new ReentrantLock();
+    private final Lock l = new ReentrantLock();
 
-    private Condition sendQueue_empty = l.newCondition();
+    private final Condition sendQueue_empty = l.newCondition();
 
     public Multiplexer(DataInputStream is, DataOutputStream os) {
         this.sendQueue = new ArrayList<>();
@@ -44,11 +45,25 @@ public class Multiplexer {
         }
     }
 
-    public TaggedConnection dequeue (int tag) {
-        //await until message with given tag is received 
-        //when wakes up remove from map and return taggedConnection
-
-        return null;
+    /**
+     * This function will stop the calling thread until the response with the desired tag is received.
+     * 
+     * @param tag
+     * @return Returns TaggedConnection with given tag.
+     * @throws InterruptedException
+     */
+    public TaggedConnection dequeue (int tag) throws InterruptedException {
+        l.lock(); 
+        try {
+            MEntry e = receiveQueue.get(tag);
+            while(!e.is_ready_flag) {
+                e.c.await();
+            }
+            receiveQueue.remove(tag);
+            return e.tc;
+        } finally {
+            l.unlock();
+        }
     }
 
     private static class MEntry {
@@ -69,11 +84,33 @@ public class Multiplexer {
         }
     }
 
-    public void runningSend () { //infinitelly checks if send queue is empty and sends objects on queue
-
+    public void runningSend () throws Exception { //infinitelly checks if send queue is empty and sends objects on queue
+        l.lock();
+        try {
+            while (true) { 
+                while(sendQueue.isEmpty()) {
+                    sendQueue_empty.await(); //releases lock when queue is empty!
+                }
+                TaggedConnection send = sendQueue.remove(0);
+                send.serialize(os);
+            }
+        } finally {
+            l.unlock();
+        }
     } 
 
-    public void runningReceive() { //keeps checking for incoming messages, places them in the receiveQueue (signaling waiting threads)
-
-    }
-}
+    public void runningReceive() throws IOException { //keeps checking for incoming messages, places them in the receiveQueue (signaling waiting threads)
+        while(true) {
+            TaggedConnection tc = TaggedConnection.deserialize(is);
+            int tag = tc.get_tag();
+            l.lock();
+            try {
+                MEntry e = receiveQueue.get(tag);
+                e.setEntryData(tc);
+                e.c.signalAll();
+            } finally {
+                l.unlock();
+            }
+        }
+    }  
+}  

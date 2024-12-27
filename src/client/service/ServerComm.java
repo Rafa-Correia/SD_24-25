@@ -2,65 +2,78 @@ package client.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import server.service.TaggedConnection;
 
 public class ServerComm implements CommI {
+    private final Multiplexer multiplexer;
+
+    public ServerComm(DataInputStream is, DataOutputStream os) {
+        multiplexer = new Multiplexer(is, os);
+    }
+
     @Override
-    public boolean authenticate(int tag, String uid, String password, DataInputStream is, DataOutputStream os) throws IOException {
+    public boolean authenticate(int tag, String uid, String password) throws Exception {
         //send login message, wait for response, check if response has same tag(?), check response value, return response
         TaggedConnection send = new TaggedConnection(tag, "Login", new TaggedConnection.UidPassPair(uid, password));
-        send.serialize(os);
-        TaggedConnection response = TaggedConnection.deserialize(is);
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
         //return value (bool)
+        if("Error".equals(response.get_id())) return false;
         return (boolean) response.get_data();
     }
 
     @Override
-    public void register(int tag, String uid, String password, DataInputStream is, DataOutputStream os) throws IOException {
+    public boolean register(int tag, String uid, String password) throws Exception {
         TaggedConnection send = new TaggedConnection(tag, "Register", new TaggedConnection.UidPassPair(uid, password));
-        send.serialize(os);
-        TaggedConnection.deserialize(is); //clear data in stream
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
+        return !"Error".equals(response.get_id());
     }
 
     @Override
-    public void put(int tag, String key, byte[] data, DataInputStream is, DataOutputStream os) throws IOException {
+    public boolean put(int tag, String key, byte[] data) throws Exception {
         TaggedConnection send = new TaggedConnection(tag, "Put", new TaggedConnection.KeyDataPair(key, data));
-        send.serialize(os);
-        TaggedConnection.deserialize(is); //clear data in stream
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
+        return !"Error".equals(response.get_id());
     }
 
     @Override
-    public byte[] get(int tag, String key, DataInputStream is, DataOutputStream os) throws IOException {
+    public byte[] get(int tag, String key) throws Exception {
         TaggedConnection send = new TaggedConnection(tag, "Get", key);
-        send.serialize(os);
-        TaggedConnection response = TaggedConnection.deserialize(is);
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
+        if("Error".equals(response.get_id())) return null;
         return (byte[]) response.get_data();
     }
 
     @Override
-    public void multiPut(int tag, Map<String, byte[]> pairs, DataInputStream is, DataOutputStream os) throws IOException {
+    public boolean multiPut(int tag, Map<String, byte[]> pairs) throws Exception {
         TaggedConnection send = new TaggedConnection(tag, "MultiPut", pairs);
-        send.serialize(os);
-        TaggedConnection.deserialize(is); //clear input stream
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
+        return !"Error".equals(response.get_id());
     }
 
     @Override
-    public Map<String, byte[]> multiGet(int tag, Set<String> keys, DataInputStream is, DataOutputStream os) throws IOException {
+    public Map<String, byte[]> multiGet(int tag, Set<String> keys) throws Exception {
         TaggedConnection send = new TaggedConnection(tag, "MultiGet", keys);
-        send.serialize(os);
-        TaggedConnection response = TaggedConnection.deserialize(is);
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
+        if("Error".equals(response.get_id())) return null;
+
         @SuppressWarnings("unchecked")
         Map<String, byte[]> ret = (Map<String, byte[]>) response.get_data();
         return ret;
     }
     
     @Override
-    public void disconnect(int tag, DataInputStream is, DataOutputStream os) throws IOException {
+    public boolean disconnect(int tag) throws Exception {
         TaggedConnection send = new TaggedConnection(tag, "Disconnect", "ok");
-        send.serialize(os);
-        TaggedConnection.deserialize(is); //clear input stream
+        multiplexer.enqueue(send);
+        TaggedConnection response = multiplexer.dequeue(tag);
+        return !"Error".equals(response.get_id());
     }
 }
