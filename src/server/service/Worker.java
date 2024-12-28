@@ -6,8 +6,8 @@ import java.util.Set;
 
 //will handle requests and all that
 public class Worker {
-    private DataService dService;
-    private Manager manager; //keep as reference to call leave();
+    private final DataService dService;
+    private final Manager manager; //keep as reference to call leave();
 
     public Worker(DataService ds, Manager m) {
         this.dService = ds;

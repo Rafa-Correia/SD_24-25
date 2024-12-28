@@ -8,21 +8,16 @@ import server.model.Auth;
  * by means of storing a password associated with a user identifier (uid).
  */
 public class AuthService {
-    private static AuthService instance = null;
-    private Auth auth;
+    private static final AuthService INSTANCE = new AuthService();
+    private final Auth auth;
     
 
     private AuthService() {
         auth = Auth.getInstance();
-        instance = this;
     }
 
     public static AuthService getInstance() {
-        if (instance == null) {
-            new AuthService();
-        }
-
-        return instance;
+        return INSTANCE;
     }
 
     public void register_client(String uid, String password) {

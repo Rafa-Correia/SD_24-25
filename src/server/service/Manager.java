@@ -5,13 +5,13 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Manager {
-    private int MAX_COUNT;
+    private final int MAX_COUNT;
 
-    private DataService dataService;
+    private final DataService dataService;
 
     private int client_count;
-    private Lock l;
-    private Condition max_clients_reached;
+    private final Lock l;
+    private final Condition max_clients_reached;
 
     public Manager(int max) {
         MAX_COUNT = max;
@@ -23,7 +23,7 @@ public class Manager {
     }
     
     
-    public Worker join () throws InterruptedException {
+    public Worker join() throws InterruptedException {
         System.out.println("Waiting on join...");
         l.lock();
         try {

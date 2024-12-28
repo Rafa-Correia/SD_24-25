@@ -4,20 +4,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Data {
-    private static Data instance = null;
-    private Map<String, byte[]> dataMap;
+    private static final Data INSTANCE = new Data();
+    private final Map<String, byte[]> dataMap;
 
     private Data() {
         dataMap = new HashMap<>();
-        instance = this;
     }
 
     public static Data getInstance() {
-        if(instance == null) {
-            new Data();
-        }
-
-        return instance;
+        return INSTANCE;
     }
 
 

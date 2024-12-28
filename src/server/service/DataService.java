@@ -12,10 +12,10 @@ import server.model.Data;
  */
 
 class DataService {
-    private static DataService instance = null;
-    private Data data_inst;
+    private static final DataService INSTANCE = new DataService();
+    private final Data data_inst;
 
-    private Lock l;
+    private final Lock l;
     
     /**
      *  Private constructor for singleton.
@@ -23,18 +23,13 @@ class DataService {
     private DataService() {
         data_inst = Data.getInstance();
         l = new ReentrantLock();
-        instance = this;
     }
 
     /**
      *  Public retriever of singleton instance.
      */
     public static DataService getInstance() {
-        if (instance == null) {
-            new DataService();
-        }
-
-        return instance;
+        return INSTANCE;
     }
 
 

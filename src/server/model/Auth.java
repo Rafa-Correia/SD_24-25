@@ -4,21 +4,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Auth {
-    private static Auth instance = null;
+    private static final Auth INSTANCE = new Auth();
 
-    private Map<String, String> authMap;    //user id -> password
+    private final Map<String, String> authMap;    //user id -> password
 
     
     private Auth() {
         authMap = new HashMap<>();
-        instance = this;
     }
 
     public static Auth getInstance() {
-        if (instance == null) {
-            new Auth();
-        }
-        return instance;
+        return INSTANCE;
     }
 
     public void put_details(String uid, String password) {

@@ -25,7 +25,7 @@ public class Server {
             oStream = new DataOutputStream(cs.getOutputStream());
         }
 
-
+        @Override
         public void run() {
             //need to design protocol for this one
 
@@ -73,7 +73,7 @@ public class Server {
                                 }
                         }
                     } else 
-                    if(null != id) switch (id) {
+                    if(null != id && w != null) switch (id) {
                         case "Put" -> {
                             KeyDataPair kdp = (KeyDataPair) obj;
                             w.put(kdp.key, kdp.data);
@@ -120,9 +120,9 @@ public class Server {
         }
     }
 
-    private ServerSocket s;
-    private Manager m;
-    private AuthService authService;
+    private final ServerSocket s;
+    private final Manager m;
+    private final AuthService authService;
 
     public Server() throws IOException {
         this.m = new Manager(10);
@@ -144,7 +144,7 @@ public class Server {
         try {
             Server s = new Server();
             s.run();
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.out.println(e.toString());
         }
     }
