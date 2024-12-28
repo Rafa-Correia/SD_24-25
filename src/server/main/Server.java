@@ -8,8 +8,9 @@ import java.net.Socket;
 import java.util.Map;
 import java.util.Set;
 import server.service.*;
-import server.service.TaggedConnection.KeyDataPair;
-import server.service.TaggedConnection.UidPassPair;
+import shared.service.TaggedConnection;
+import shared.service.TaggedConnection.KeyDataPair;
+import shared.service.TaggedConnection.UidPassPair;
 public class Server {
     private class ServerWorker implements Runnable {
         Manager man;
@@ -32,7 +33,8 @@ public class Server {
             //flag to check if authenticated?
             boolean authenticated = false;
             Worker w = null;
-            while (true) {
+            boolean has_quit = false;
+            while (!has_quit) {
                 try {
                     TaggedConnection t = TaggedConnection.deserialize(iStream);
                     int tag = t.get_tag();
@@ -53,7 +55,8 @@ public class Server {
                                     System.out.println("Auth status: " + authenticated);
                                     if(authenticated) {
                                         w = man.join();
-                                    }       TaggedConnection response = new TaggedConnection(tag, "Data", authenticated);
+                                    }       
+                                    TaggedConnection response = new TaggedConnection(tag, "Data", authenticated);
                                     response.serialize(oStream);
                                 }
                             case "Register" ->                                 {
@@ -101,6 +104,7 @@ public class Server {
                             w.leave();
                             TaggedConnection response = new TaggedConnection(tag, "Data", true); //not checking for null return 
                             response.serialize(oStream);
+                            has_quit = true;
                             }
                         default -> {
                         }

@@ -1,4 +1,4 @@
-package server.service;
+package shared.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

@@ -4,7 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Map;
 import java.util.Set;
-import server.service.TaggedConnection;
+
+import shared.service.TaggedConnection;
 
 public class ServerComm implements CommI {
     private final Multiplexer multiplexer;
@@ -74,7 +75,8 @@ public class ServerComm implements CommI {
         TaggedConnection send = new TaggedConnection(tag, "Disconnect", "ok");
         multiplexer.enqueue(send);
         TaggedConnection response = multiplexer.dequeue(tag);
-        return !"Error".equals(response.get_id());
+        if("Error".equals(response.get_id())) return false;
+        return (boolean) response.get_data();
     }
 
     public void runningSend() throws Exception {

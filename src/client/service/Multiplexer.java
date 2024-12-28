@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import server.service.TaggedConnection;
+import shared.service.TaggedConnection;
 
 public class Multiplexer {
     private final DataInputStream is;
