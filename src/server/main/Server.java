@@ -42,17 +42,17 @@ public class Server {
                     String id = t.get_id();
 
                     if(!authenticated) {
-                        System.out.println("Not auth!");
+                        //System.out.println("Not auth!");
                         if(null == id) {
-                            System.out.println("Unauthorized operation (" + id + ")");
+                            //System.out.println("Unauthorized operation (" + id + ")");
                             TaggedConnection response = new TaggedConnection(tag, "Error", "no auth");
                             response.serialize(oStream);
                         } else switch (id) {
                             case "Login" ->                                 {
                                     UidPassPair upp = (UidPassPair) obj;
-                                    System.out.println("Got Login message with uid " + upp.uid + " and pass " + upp.password);
+                                    //System.out.println("Got Login message with uid " + upp.uid + " and pass " + upp.password);
                                     authenticated = authService.authenticate(upp.uid, upp.password);
-                                    System.out.println("Auth status: " + authenticated);
+                                    //System.out.println("Auth status: " + authenticated);
                                     if(authenticated) {
                                         w = man.join();
                                     }       
@@ -61,13 +61,13 @@ public class Server {
                                 }
                             case "Register" ->                                 {
                                     UidPassPair upp = (UidPassPair) obj;
-                                    System.out.println("Got Register message with uid " + upp.uid + " and pass " + upp.password);
+                                    //System.out.println("Got Register message with uid " + upp.uid + " and pass " + upp.password);
                                     authService.register_client(upp.uid, upp.password);
                                     TaggedConnection response = new TaggedConnection(tag, "Echo", "ok");
                                     response.serialize(oStream);
                                 }
                             default ->                                 {
-                                    System.out.println("Unauthorized operation (" + id + ")");
+                                    //System.out.println("Unauthorized operation (" + id + ")");
                                     TaggedConnection response = new TaggedConnection(tag, "Error", "no auth");
                                     response.serialize(oStream);
                                 }
@@ -83,8 +83,13 @@ public class Server {
                         case "Get" -> {
                             String key = (String) obj;
                             byte[] bArray = w.get(key);
-                            TaggedConnection response = new TaggedConnection(tag, "Data", bArray); //not checking for null return 
-                            response.serialize(oStream);
+                            if(bArray != null) {
+                                TaggedConnection response = new TaggedConnection(tag, "Data", bArray); //not checking for null return 
+                                response.serialize(oStream);
+                            } else {
+                                TaggedConnection response = new TaggedConnection(tag, "Error", "Key does not exist.");
+                                response.serialize(oStream);
+                            }
                             }
                         case "MultiPut" -> {
                             @SuppressWarnings("unchecked")
@@ -97,8 +102,13 @@ public class Server {
                             @SuppressWarnings("unchecked")
                                     Set<String> s = (Set<String>) obj;
                             Map<String, byte[]> m = w.mutliGet(s);
-                            TaggedConnection response = new TaggedConnection(tag, "Data", m); //not checking for null return 
-                            response.serialize(oStream);
+                            if(m == null) {
+                                TaggedConnection response = new TaggedConnection(tag, "Error", "No given key exists.");
+                                response.serialize(oStream);
+                            } else {
+                                TaggedConnection response = new TaggedConnection(tag, "Data", m); //not checking for null return 
+                                response.serialize(oStream);
+                            }
                             }
                         case "Disconnect" -> {
                             w.leave();

@@ -92,9 +92,15 @@ class DataService {
         l.lock();
         try {
             for(String key : keys) {
-                ret.put(key, data_inst.get_data(key));
+                byte[] data = data_inst.get_data(key);
+                if(data == null) continue;
+                ret.put(key, data);
             }
-            return ret;
+            if(ret.isEmpty()) {
+                return null;
+            } else {
+                return ret;
+            }
         } finally {
             l.unlock();
         }

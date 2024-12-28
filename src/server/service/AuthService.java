@@ -13,7 +13,7 @@ public class AuthService {
     private static final AuthService INSTANCE = new AuthService();
     private final Auth auth;
 
-    private Lock l = new ReentrantLock();
+    private final Lock l = new ReentrantLock();
     
 
     private AuthService() {

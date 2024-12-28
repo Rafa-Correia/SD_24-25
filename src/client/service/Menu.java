@@ -2,6 +2,7 @@ package client.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -10,14 +11,31 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Menu {
     private final ServerComm sCom;
     private final Scanner sc = new Scanner(System.in);
 
-    private int tag_counter = 0;
+    private final AtomicInt tag_counter = new AtomicInt();
 
     private boolean is_multithreaded = false;
+
+    private static class AtomicInt {
+        int counter = 0;
+        private final Lock l = new ReentrantLock();
+
+        public int get_and_increment() {
+            l.lock();
+            try {
+                counter++;
+                return counter;
+            } finally {
+                l.unlock();
+            }
+        }
+    }
 
     //still no idea what instance variables are needed
     //todo
@@ -84,13 +102,13 @@ public class Menu {
             }
         }
         main_menu();
+        return;
     }
 
     private void main_menu() throws Exception {
         boolean has_quit = false;
 
-        while (has_quit == false) { 
-            if(has_quit == true) break;
+        while (!has_quit) { 
             //show options
             System.out.println("=========================================================\n");
             System.out.println("1 - Register ");
@@ -120,8 +138,10 @@ public class Menu {
                     case 6 -> download_many_menu();
                     case 0 -> {
                         has_quit = disconnect();
-                        System.out.println("(main) " + has_quit);
-                        break;
+                        //System.out.println("(main) " + has_quit);
+                        if(has_quit) System.out.print("");
+                        return;
+                        //break;
                     }
                     default -> {
                     }
@@ -139,8 +159,7 @@ public class Menu {
             System.out.print("Password: ");
             String password = sc.next();
 
-            boolean authenticated = sCom.register(tag_counter, uid, password);
-            tag_counter++;
+            boolean authenticated = sCom.register(tag_counter.get_and_increment(), uid, password);
 
             clearConsole();
 
@@ -162,8 +181,7 @@ public class Menu {
             System.out.print("Password: ");
             String password = sc.next();
 
-            boolean authenticated = sCom.authenticate(tag_counter, uid, password);
-            tag_counter++;
+            boolean authenticated = sCom.authenticate(tag_counter.get_and_increment(), uid, password);
 
             clearConsole();
 
@@ -185,22 +203,30 @@ public class Menu {
             String key = sc.next();
 
             Path path = Path.of(filePath);
-            byte[] data = Files.readAllBytes(path);
 
-            boolean status = sCom.put(tag_counter, key, data);
-            tag_counter++;
+            if(!is_multithreaded) {
+                upload_single_work(path, key, tag_counter);
+            } else {
+                //dispatch thread to do work
+                Thread t = new Thread(() -> upload_single_work(path, key, tag_counter));
+                t.start();
+            }
 
             clearConsole();
-
-            if(status) {
-                System.out.println("Success!");
-
-            } else {
-                System.out.println("Could not upload file " + filePath + " with key " + key + ".");
-            }
         } catch (Exception e) {
             System.out.println("File does not exist!");
         }
+    }
+
+    private void upload_single_work(Path p, String key, AtomicInt counter) {
+        try {
+            byte[] data = Files.readAllBytes(p);
+            boolean status = sCom.put(counter.get_and_increment(), key, data);
+            if(status) System.out.print("");
+        } catch (Exception e) {
+
+        }
+
     }
 
     private void download_single_menu() {
@@ -209,18 +235,32 @@ public class Menu {
             String key = sc.next();
             Path p = Path.of(key);
 
-            byte[] file_dl = sCom.get(tag_counter, key);
-            tag_counter++;
-
             clearConsole();
-
-            if(file_dl == null) System.out.println("Failed to download.");
-            else {
-                Files.write(p, file_dl);
-                System.out.println("Success!");
+            
+            if(!is_multithreaded) {
+                download_single_work(p, key, tag_counter);
+            } else {
+                //dispatch thread
+                Thread t = new Thread(()->download_single_work(p, key, tag_counter));
+                t.start();
             }
+
         } catch (Exception e) {
             System.out.println("Failed to download (" + e.toString() + ").");
+        }
+    }
+
+    private void download_single_work(Path p, String key, AtomicInt counter) {
+        try {
+            byte[] file_dl = sCom.get(counter.get_and_increment(), key);
+
+            if(file_dl == null) System.out.println("");
+            else {
+                Files.write(p, file_dl);
+                //System.out.println("Success!");
+            }
+        } catch (Exception e) {
+
         }
     }
 
@@ -254,19 +294,26 @@ public class Menu {
             clearConsole();
 
             if(!pairs.isEmpty()) {
-                boolean status = sCom.multiPut(tag_counter, pairs);
-                tag_counter++;
-
-                if(status) {
-                    System.out.println("Success!");
-                } else {
-                    System.out.println("Something went wrong.");
+                if(!is_multithreaded) upload_many_work(pairs, tag_counter);
+                else {
+                    Thread t = new Thread(() -> upload_many_work(pairs, tag_counter));
+                    t.start();
                 }
             } else {
                 System.out.println("No files to be uploaded.");
             }
 
+        } catch (IOException e) {
+        }
+    }
+
+    private void upload_many_work(Map<String, byte[]> pairs, AtomicInt counter) {
+        try {
+            boolean status = sCom.multiPut(counter.get_and_increment(), pairs);
+
+            if(status) System.out.print("");
         } catch (Exception e) {
+
         }
     }
 
@@ -284,27 +331,37 @@ public class Menu {
                 counter++;
             }
 
-            Map<String, byte[]> file_data = sCom.multiGet(tag_counter, keys);
-            tag_counter++;
-
-            for (Entry<String, byte[]> e : file_data.entrySet()) {
-                Path p = Path.of(e.getKey());
-                Files.write(p, e.getValue());
-            }
-
             clearConsole();
 
-            System.out.println("Success!");
+            if(!is_multithreaded) {
+                download_many_work(keys, tag_counter);
+            } else {
+                //dispatch thread to do work
+                Thread t = new Thread(() -> download_many_work(keys, tag_counter));
+                t.start();
+            }
         } catch (Exception e) {
 
         }
     }
 
+    private void download_many_work(Set<String> keys, AtomicInt counter) {
+        try {
+            Map<String, byte[]> file_data = sCom.multiGet(counter.get_and_increment(), keys);
+
+            if(file_data == null) return;
+            for (Entry<String, byte[]> e : file_data.entrySet()) {
+                Path p = Path.of(e.getKey());
+                Files.write(p, e.getValue());
+            }
+        } catch (Exception e) {
+        }
+    }
+
     private boolean disconnect() {
         try {
-            boolean success = sCom.disconnect(tag_counter);
-            tag_counter++;
-            System.out.println("Has disconected: " + success);
+            boolean success = sCom.disconnect(tag_counter.get_and_increment());
+            //System.out.println("Has disconected: " + success);
             return success;
         } catch (Exception e) {
             System.out.println(e.toString());

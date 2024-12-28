@@ -109,7 +109,7 @@ public class Multiplexer {
         while(true) {
             TaggedConnection tc = TaggedConnection.deserialize(is);
             int tag = tc.get_tag();
-            System.out.println("(runningReceive) Got a response with tag " + tag + " of type " + tc.get_id());
+            //System.out.println("(runningReceive) Got a response with tag " + tag + " of type " + tc.get_id());
             l.lock();
             try {
                 MEntry e = receiveQueue.get(tag);

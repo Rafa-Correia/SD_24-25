@@ -66,7 +66,7 @@ public class TaggedConnection {
 
 
     public void serialize(DataOutputStream os) throws IOException {
-        System.out.println("(se) tag: " + tag + " id: " + id + " type: " + type);
+        //System.out.println("(se) tag: " + tag + " id: " + id + " type: " + type);
         os.writeInt(tag);
         os.writeUTF(id);
         os.writeInt(type);
@@ -75,7 +75,7 @@ public class TaggedConnection {
 
         switch(type) {
             case 1 -> {
-                System.out.println("Serializing map!");
+                //System.out.println("Serializing map!");
                 @SuppressWarnings("unchecked")
                         Map<String, byte[]> m = (Map<String, byte[]>) data;
                 os.writeInt(m.size());
@@ -90,7 +90,7 @@ public class TaggedConnection {
             } 
             
             case 2 -> {
-                System.out.println("Serializing set!");
+                //System.out.println("Serializing set!");
                 @SuppressWarnings("unchecked")
                         Set<String> s = (Set<String>) data;
                 os.writeInt(s.size());
@@ -103,14 +103,14 @@ public class TaggedConnection {
 
             case 3 -> {
                 //string
-                System.out.println("Serializing string!");
+                //System.out.println("Serializing string!");
                 os.writeUTF((String) data);
                 os.flush();
                 break;
             }
 
             case 4 -> {
-                System.out.println("Serializing barray!");
+                //System.out.println("Serializing barray!");
                 //byte[]
                 byte[] bArray = (byte[]) data;
                 os.writeInt(bArray.length);
@@ -120,7 +120,7 @@ public class TaggedConnection {
             }
 
             case 5 -> {
-                System.out.println("Serializing uidpasspair!");
+                //System.out.println("Serializing uidpasspair!");
                 //UidPassPair
                 UidPassPair p = (UidPassPair) data;
                 os.writeUTF(p.uid);
@@ -130,7 +130,7 @@ public class TaggedConnection {
             }
             
             case 6 -> {
-                System.out.println("Serializing keydatapair!");
+                //System.out.println("Serializing keydatapair!");
                 //KeyDataPair
                 KeyDataPair k = (KeyDataPair) data;
                 os.writeUTF(k.key);
@@ -141,13 +141,13 @@ public class TaggedConnection {
             }
 
             case 7 -> {
-                System.out.println("Serializing boolean...");
+                //System.out.println("Serializing boolean...");
                 //boolean
                 Boolean b = (Boolean) data;
-                System.out.println("Bool has value: " + b) ;
+                //System.out.println("Bool has value: " + b) ;
                 os.writeBoolean(b);
                 os.flush();
-                System.out.println("Done!");
+                //System.out.println("Done!");
                 break;
             }
 
@@ -156,18 +156,10 @@ public class TaggedConnection {
             }
         }
 
-        System.out.println("Finished serialization.");
+        //System.out.println("Finished serialization.");
     }
 
     public static TaggedConnection deserialize(DataInputStream is) throws IOException {
-
-        //THIS LOOP IS ABSOLUTELLY NECESSARY
-        //if this loop is not here the code wont work for some reason (i do not know why)
-        //what the frick
-        //i hate this stuff sometimes
-        //maybe god knows why this works, cause i dont
-
-        
         while(is.available() <= 0) {
             try {
                 System.out.print("");
@@ -176,17 +168,15 @@ public class TaggedConnection {
                 System.out.println(e.toString());
             }
         }   
-        
-        //DO NOT REMOVE LOOP
 
         int tag = is.readInt();
         String id = is.readUTF();
         int type = is.readInt();
-        System.out.println("(de) tag: " + tag + " id: " + id + " type: " + type);
+        //System.out.println("(de) tag: " + tag + " id: " + id + " type: " + type);
         Object data;
         switch(type) {
             case 1 -> {
-                System.out.println("Deserializing map!");
+                //System.out.println("Deserializing map!");
                 //map
                 Map<String, byte[]> m = new HashMap<>();
                 int mapsize = is.readInt();
@@ -202,7 +192,7 @@ public class TaggedConnection {
             }
 
             case 2 -> {
-                System.out.println("Deserializing set!");
+                //System.out.println("Deserializing set!");
                 //set
                 Set<String> s = new HashSet<>();
                 int setsize = is.readInt();
@@ -214,16 +204,16 @@ public class TaggedConnection {
             }
 
             case 3 -> {
-                System.out.println("Deserializing string!");
+                //System.out.println("Deserializing string!");
                 //string
                 data = is.readUTF();
                 break;
             }
             
             case 4 -> {
-                System.out.println("Deserializing barray!");
+                //System.out.println("Deserializing barray!");
                 int arraysize = is.readInt();
-                System.out.println("Length is " + arraysize);
+                //System.out.println("Length is " + arraysize);
                 byte[] bytearray = new byte[arraysize];
                 is.read(bytearray, 0, arraysize);
                 data = bytearray;
@@ -231,7 +221,7 @@ public class TaggedConnection {
             }
 
             case 5 -> {
-                System.out.println("Deserializing uidpasspair!");
+                //System.out.println("Deserializing uidpasspair!");
                 String uid = is.readUTF();
                 String password = is.readUTF();
 
@@ -240,7 +230,7 @@ public class TaggedConnection {
             }
 
             case 6 -> {
-                System.out.println("Deserializing keydatapair!");
+                //System.out.println("Deserializing keydatapair!");
                 String key = is.readUTF();
                 int bSize = is.readInt();
                 byte[] bArray = new byte[bSize];
@@ -250,9 +240,9 @@ public class TaggedConnection {
             }
 
             case 7 -> {
-                System.out.println("Deserializing boolean!");
+                //System.out.println("Deserializing boolean!");
                 data = is.readBoolean();
-                System.out.println("Done!");
+                //System.out.println("Done!");
 
                 break;
             }

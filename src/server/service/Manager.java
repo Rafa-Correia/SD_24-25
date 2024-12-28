@@ -24,7 +24,7 @@ public class Manager {
     
     
     public Worker join() throws InterruptedException {
-        System.out.println("Waiting on join...");
+        //System.out.println("Waiting on join...");
         l.lock();
         try {
             while(client_count >= MAX_COUNT) {
@@ -37,7 +37,7 @@ public class Manager {
             
         } finally {
             l.unlock();
-            System.out.println("Done!");
+            //System.out.println("Done!");
         }
     } 
 
