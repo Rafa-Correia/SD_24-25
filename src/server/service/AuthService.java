@@ -1,5 +1,7 @@
 package server.service;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import server.model.Auth;
 
 
@@ -10,6 +12,8 @@ import server.model.Auth;
 public class AuthService {
     private static final AuthService INSTANCE = new AuthService();
     private final Auth auth;
+
+    private Lock l = new ReentrantLock();
     
 
     private AuthService() {
@@ -21,12 +25,22 @@ public class AuthService {
     }
 
     public void register_client(String uid, String password) {
-        auth.put_details(uid, password);
+        l.lock();
+        try {
+            auth.put_details(uid, password);
+        } finally {
+            l.unlock();
+        }
     }
 
     public boolean authenticate(String uid, String password) {
-        String uid_pass = auth.get_password(uid);
-        if(uid_pass == null) return false; //check if null
-        return uid_pass.equals(password);
+        l.lock();
+        try { 
+            String uid_pass = auth.get_password(uid);
+            if(uid_pass == null) return false; //check if null
+            return uid_pass.equals(password);
+        } finally {
+            l.unlock();
+        }
     }
 }

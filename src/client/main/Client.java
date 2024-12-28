@@ -27,7 +27,7 @@ public class Client {
 
     public void run() {
         try {
-            menu.main_menu();
+            menu.startup_menu();
         } catch (Exception e) {
             System.out.println(e.toString());
         }

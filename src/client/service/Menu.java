@@ -17,6 +17,8 @@ public class Menu {
 
     private int tag_counter = 0;
 
+    private boolean is_multithreaded = false;
+
     //still no idea what instance variables are needed
     //todo
     public Menu (DataInputStream is, DataOutputStream os) {
@@ -67,10 +69,28 @@ public class Menu {
         tR.start();
     }
 
-    public void main_menu() throws Exception {
+    public void startup_menu() throws Exception {
+        System.out.println("There's two ways to run the client, single and multithreaded.\nIn \"singlethreaded mode\" the client will handle a single request at once.\nIn \"multithreaded mode\" the client will be able to run multiple requests at once.\nIf the server is being slow it is recomended to use \"multithreaded mode\".\nSo, which will it be?\n");
+        System.out.println("1 - Singlethreaded\n2 - Multithreaded ");
+
+        while(true) {
+            System.out.print("\nMode: ");
+            int mode = sc.nextInt();
+
+            if(mode != 1 && mode != 2) System.out.println("Not a valid option.\n");
+            else {
+                is_multithreaded = mode != 1;
+                break;
+            }
+        }
+        main_menu();
+    }
+
+    private void main_menu() throws Exception {
         boolean has_quit = false;
 
-        while (!has_quit) { 
+        while (has_quit == false) { 
+            if(has_quit == true) break;
             //show options
             System.out.println("=========================================================\n");
             System.out.println("1 - Register ");
@@ -98,7 +118,11 @@ public class Menu {
                     case 4 -> download_single_menu();
                     case 5 -> upload_many_menu();
                     case 6 -> download_many_menu();
-                    case 0 -> has_quit = disconnect();
+                    case 0 -> {
+                        has_quit = disconnect();
+                        System.out.println("(main) " + has_quit);
+                        break;
+                    }
                     default -> {
                     }
                 }
@@ -125,8 +149,6 @@ public class Menu {
             } else {
                 System.out.println("Couldn't register!");
             }
-             
-            main_menu();
         } catch (Exception e) {
             System.out.println(e.toString());
         }
@@ -150,8 +172,6 @@ public class Menu {
             } else {
                 System.out.println("Couldn't login!");
             }
-             
-            main_menu();
         } catch (Exception e) {
             System.out.println(e.toString());
         }
