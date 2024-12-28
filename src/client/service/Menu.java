@@ -4,7 +4,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.Set;
 
 public class Menu {
     private final ServerComm sCom;
@@ -91,6 +96,8 @@ public class Menu {
                     case 2 -> login_menu();
                     case 3 -> upload_single_menu();
                     case 4 -> download_single_menu();
+                    case 5 -> upload_many_menu();
+                    case 6 -> download_many_menu();
                     case 0 -> has_quit = disconnect();
                     default -> {
                     }
@@ -194,6 +201,82 @@ public class Menu {
             }
         } catch (Exception e) {
             System.out.println("Failed to download (" + e.toString() + ").");
+        }
+    }
+
+    private void upload_many_menu() {
+        //hmm
+        try {
+            int counter = 1;
+            Map<String, byte[]> pairs = new HashMap<>();
+            System.out.println("Please state the file path of the files you intend to upload and the keys to which you intend to associate them with.\nWhen you want to stop, enter \"exit\"");
+            while (true) { 
+                System.out.print("File path ("+counter+"): ");
+                String path = sc.next();
+                if("exit".equals(path)) break;
+                System.out.print("Key ("+counter+"): ");
+                String key = sc.next();
+
+                Path p = Path.of(path);
+                boolean exists = Files.exists(p);
+                if(exists) {
+                    byte[] file_data = Files.readAllBytes(p);
+                    pairs.put(key, file_data);
+                    System.out.println("Ok.");
+                } else {
+                    System.out.println("File does not exist.");
+                }
+                System.out.print("\n\n");
+
+                counter++;
+            }
+
+            clearConsole();
+
+            if(!pairs.isEmpty()) {
+                boolean status = sCom.multiPut(tag_counter, pairs);
+                tag_counter++;
+
+                if(status) {
+                    System.out.println("Success!");
+                } else {
+                    System.out.println("Something went wrong.");
+                }
+            } else {
+                System.out.println("No files to be uploaded.");
+            }
+
+        } catch (Exception e) {
+        }
+    }
+
+    private void download_many_menu() {
+        try {
+            //hmm2
+            System.out.println("Please state the keys of the files you intend to download.\nWhen you want no more keys, enter \"exit\".");
+            Set<String> keys = new HashSet<>();
+            int counter = 1;
+            while(true) {
+                System.out.print("Key " + counter + ": ");
+                String key = sc.next();
+                if("exit".equals(key)) break;
+                keys.add(key);
+                counter++;
+            }
+
+            Map<String, byte[]> file_data = sCom.multiGet(tag_counter, keys);
+            tag_counter++;
+
+            for (Entry<String, byte[]> e : file_data.entrySet()) {
+                Path p = Path.of(e.getKey());
+                Files.write(p, e.getValue());
+            }
+
+            clearConsole();
+
+            System.out.println("Success!");
+        } catch (Exception e) {
+
         }
     }
 

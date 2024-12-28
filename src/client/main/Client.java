@@ -38,6 +38,7 @@ public class Client {
             Socket s = new Socket("localhost", 65432);
             Client c = new Client(s);
             c.run();
+            s.close();
         } catch (IOException e) {
             System.out.println(e.toString());
         }
